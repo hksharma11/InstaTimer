@@ -12,6 +12,34 @@ private let igGradient = LinearGradient(
 struct InstaTimerWidgetBundle: WidgetBundle {
     var body: some Widget {
         InstaTimerLiveActivity()
+        InstaTimerHomeWidget()
+    }
+}
+
+/// Simple home-screen widget. If it draws, the widget extension is running on the phone.
+struct InstaTimerHomeWidget: Widget {
+    struct Entry: TimelineEntry { let date: Date }
+
+    struct Provider: TimelineProvider {
+        func placeholder(in context: Context) -> Entry { Entry(date: .now) }
+        func getSnapshot(in context: Context, completion: @escaping (Entry) -> Void) { completion(Entry(date: .now)) }
+        func getTimeline(in context: Context, completion: @escaping (Timeline<Entry>) -> Void) {
+            completion(Timeline(entries: [Entry(date: .now)], policy: .never))
+        }
+    }
+
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: "InstaTimerHome", provider: Provider()) { _ in
+            VStack(spacing: 8) {
+                IGBadge(size: 40)
+                Text("InstaTimer").font(.headline)
+                Text("Widget working").font(.caption).foregroundStyle(.secondary)
+            }
+            .containerBackground(.fill.tertiary, for: .widget)
+        }
+        .configurationDisplayName("InstaTimer")
+        .description("Opens InstaTimer.")
+        .supportedFamilies([.systemSmall])
     }
 }
 
