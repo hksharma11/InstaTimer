@@ -9,6 +9,7 @@ private let igGradient = LinearGradient(
 struct ContentView: View {
     @State private var refresh = 0
     @State private var confirmReset = false
+    @AppStorage("lastBubbleMessage") private var lastMessage = "Tap Start timer to test."
 
     private let store = UsageStore.shared
 
@@ -59,6 +60,23 @@ struct ContentView: View {
                     } label: { Label("Stop timer", systemImage: "stop.fill") }
                 }
 
+                Section("Status") {
+                    TimelineView(.periodic(from: .now, by: 1)) { _ in
+                        VStack(alignment: .leading, spacing: 6) {
+                            StatusRow(title: "Live Activities", ok: ActivityAuthorizationInfo().areActivitiesEnabled,
+                                      okText: "Allowed", badText: "Off in Settings")
+                            StatusRow(title: "Timer widget", ok: widgetInstalled,
+                                      okText: "Installed", badText: "Missing")
+                            StatusRow(title: "Bubbles running", ok: !Activity<InstaTimerAttributes>.activities.isEmpty,
+                                      okText: "\(Activity<InstaTimerAttributes>.activities.count)", badText: "0")
+                            Text(lastMessage)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .textSelection(.enabled)
+                        }
+                    }
+                }
+
                 Section("One-time setup") {
                     SetupStep(n: 1, text: "Open the **Shortcuts** app › **Automation** tab › **+**.")
                     SetupStep(n: 2, text: "Choose **App** › pick **Instagram** › tick **Is Opened** only › select **Run Immediately**.")
@@ -77,6 +95,30 @@ struct ContentView: View {
                     Task { await TimerController.shared.stop(); store.reset(); refresh += 1 }
                 }
             }
+        }
+    }
+}
+
+/// True if the widget extension (which draws the bubble) made it into the installed app.
+private var widgetInstalled: Bool {
+    guard let url = Bundle.main.builtInPlugInsURL,
+          let items = try? FileManager.default.contentsOfDirectory(atPath: url.path) else { return false }
+    return items.contains { $0.hasSuffix(".appex") }
+}
+
+private struct StatusRow: View {
+    let title: String
+    let ok: Bool
+    let okText: String
+    let badText: String
+
+    var body: some View {
+        HStack {
+            Text(title).font(.subheadline)
+            Spacer()
+            Label(ok ? okText : badText, systemImage: ok ? "checkmark.circle.fill" : "xmark.circle.fill")
+                .font(.subheadline.bold())
+                .foregroundStyle(ok ? .green : .red)
         }
     }
 }

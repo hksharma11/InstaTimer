@@ -24,7 +24,16 @@ jobs:
         run: |
           mkdir Payload
           cp -R build/Build/Products/Release-iphoneos/InstaTimer.app Payload/
+          find Payload -maxdepth 4
           zip -qr InstaTimer.ipa Payload
+      - name: Check widget is embedded
+        run: |
+          W=Payload/InstaTimer.app/PlugIns/InstaTimerWidget.appex
+          test -f "$W/InstaTimerWidget" && test -f "$W/Info.plist"
+          /usr/libexec/PlistBuddy -c "Print :NSExtension:NSExtensionPointIdentifier" "$W/Info.plist" | grep -q widgetkit-extension
+      - name: Check Live Activities key
+        run: |
+          /usr/libexec/PlistBuddy -c "Print :NSSupportsLiveActivities" Payload/InstaTimer.app/Info.plist | grep -q true
       - uses: actions/upload-artifact@v4
         with:
           name: InstaTimer-ipa

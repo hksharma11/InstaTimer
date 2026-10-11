@@ -19,21 +19,34 @@ final class TimerController {
 
         if let existing = Activity<InstaTimerAttributes>.activities.first {
             await existing.update(content)
+            report("Bubble updated (\(existing.activityState)).")
             return
         }
 
-        guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
-        do {
-            _ = try Activity.request(attributes: InstaTimerAttributes(), content: content, pushType: nil)
-        } catch {
-            print("Could not start Live Activity: \(error)")
+        guard ActivityAuthorizationInfo().areActivitiesEnabled else {
+            report("Live Activities are turned off for InstaTimer in Settings.")
+            return
         }
+        do {
+            let activity = try Activity.request(attributes: InstaTimerAttributes(), content: content, pushType: nil)
+            report("Bubble started (\(activity.activityState)). Swipe up to see it.")
+        } catch {
+            report("Couldn't start bubble: \(error.localizedDescription) — \(error)")
+        }
+    }
+
+    /// Shown in the app's Status section so problems are visible on the phone.
+    private func report(_ message: String) {
+        let time = Date.now.formatted(date: .omitted, time: .standard)
+        UserDefaults.standard.set("\(time): \(message)", forKey: "lastBubbleMessage")
     }
 
     func stop() async {
         store.endSession()
-        for activity in Activity<InstaTimerAttributes>.activities {
+        let running = Activity<InstaTimerAttributes>.activities
+        for activity in running {
             await activity.end(nil, dismissalPolicy: .immediate)
         }
+        report("Stopped (\(running.count) bubble(s) closed).")
     }
 }
