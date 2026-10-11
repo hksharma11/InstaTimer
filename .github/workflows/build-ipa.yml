@@ -24,6 +24,24 @@ jobs:
         run: |
           mkdir Payload
           cp -R build/Build/Products/Release-iphoneos/InstaTimer.app Payload/
+          # Ad-hoc sign with the usual development entitlements so re-signers
+          # (Sideloadly) treat the widget as an extension that needs its own profile.
+          ent() {
+            cat > "$2" <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>application-identifier</key><string>ABCDE12345.$1</string>
+            <key>com.apple.developer.team-identifier</key><string>ABCDE12345</string>
+            <key>get-task-allow</key><true/>
+          </dict></plist>
+          EOF
+          }
+          ent com.example.instatimer.widget widget.entitlements
+          ent com.example.instatimer app.entitlements
+          codesign -f -s - --entitlements widget.entitlements Payload/InstaTimer.app/PlugIns/InstaTimerWidget.appex
+          codesign -f -s - --entitlements app.entitlements Payload/InstaTimer.app
+          codesign -d --entitlements - Payload/InstaTimer.app/PlugIns/InstaTimerWidget.appex
           find Payload -maxdepth 4
           zip -qr InstaTimer.ipa Payload
       - name: Check widget is embedded
@@ -38,6 +56,8 @@ jobs:
           echo "::notice title=AppInfo::$(plutil -convert json -o - Payload/InstaTimer.app/Info.plist)"
           echo "::notice title=WidgetBinary::$(file "$W/InstaTimerWidget" | tr '\n' ' ') $(otool -l "$W/InstaTimerWidget" | grep -A4 LC_BUILD_VERSION | tr -s ' \n' ' ')"
           echo "::notice title=WidgetFiles::$(cd "$W" && find . | tr '\n' ' ')"
+          echo "::notice title=WidgetEntitlements::$(codesign -d --entitlements - --xml "$W" 2>/dev/null | tr '\n' ' ')"
+          echo "::notice title=AppSignature::$(codesign -dv Payload/InstaTimer.app 2>&1 | tr '\n' ' ')"
       - name: Check Live Activities key
         run: |
           /usr/libexec/PlistBuddy -c "Print :NSSupportsLiveActivities" Payload/InstaTimer.app/Info.plist | grep -q true
