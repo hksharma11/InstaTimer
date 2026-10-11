@@ -1,10 +1,14 @@
-# Builds an unsigned InstaTimer.ipa on GitHub's Macs, so you don't need one.
-# Install it on your iPhone from Windows with Sideloadly (signs it with your Apple ID).
+# Builds InstaTimer.ipa on GitHub's Macs, so you don't need one, and publishes it to
+# Releases at a fixed link: /releases/latest/download/InstaTimer.ipa
+# Install it with AltStore or Sideloadly (they sign it with your Apple ID).
 name: Build IPA
 on:
   workflow_dispatch:
   push:
     branches: [main]
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -65,3 +69,10 @@ jobs:
         with:
           name: InstaTimer-ipa
           path: InstaTimer.ipa
+      - name: Publish to Releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh release delete latest --yes --cleanup-tag || true
+          gh release create latest InstaTimer.ipa --latest             --title "InstaTimer (latest build)"             --notes "Built from commit ${GITHUB_SHA::7}. Open this link on your iPhone and install InstaTimer.ipa with AltStore."
