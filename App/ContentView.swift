@@ -77,6 +77,24 @@ struct ContentView: View {
                     }
                 }
 
+                Section("Signing") {
+                    ForEach(SigningInfo.all()) { info in
+                        VStack(alignment: .leading, spacing: 4) {
+                            StatusRow(title: info.id, ok: info.profileMatches,
+                                      okText: "Signed OK", badText: info.profileAppID == nil ? "No profile" : "Mismatch")
+                            Group {
+                                Text("Bundle: \(info.bundleID)")
+                                Text("Profile: \(info.profileAppID ?? "none")")
+                                if let name = info.profileName { Text("Profile name: \(name)") }
+                                if let ext = info.extensionPoint { Text("Type: \(ext)") }
+                            }
+                            .font(.caption2.monospaced())
+                            .foregroundStyle(.secondary)
+                            .textSelection(.enabled)
+                        }
+                    }
+                }
+
                 Section("One-time setup") {
                     SetupStep(n: 1, text: "Open the **Shortcuts** app › **Automation** tab › **+**.")
                     SetupStep(n: 2, text: "Choose **App** › pick **Instagram** › tick **Is Opened** only › select **Run Immediately**.")
