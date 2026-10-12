@@ -103,7 +103,13 @@ struct InstaTimerLiveActivity: Widget {
                     .multilineTextAlignment(.trailing)
                     .frame(maxWidth: 48)
             } minimal: {
-                IGBadge(size: 18)
+                // Shown when another app's Live Activity is also running: just the time.
+                Text(timerInterval: context.state.countingFrom...context.state.countingFrom.addingTimeInterval(24 * 3600),
+                     countsDown: false, showsHours: false)
+                    .font(.system(size: 11, weight: .bold).monospacedDigit())
+                    .foregroundStyle(igPink)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: 34)
             }
             .keylineTint(igPink)
         }

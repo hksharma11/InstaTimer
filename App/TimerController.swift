@@ -15,7 +15,8 @@ final class TimerController {
         let state = InstaTimerAttributes.ContentState(
             countingFrom: now.addingTimeInterval(-usedToday)
         )
-        let content = ActivityContent(state: state, staleDate: nil)
+        // High relevance so InstaTimer gets the main Dynamic Island spot over other Live Activities.
+        let content = ActivityContent(state: state, staleDate: nil, relevanceScore: 100)
 
         if let existing = Activity<InstaTimerAttributes>.activities.first {
             await existing.update(content)
